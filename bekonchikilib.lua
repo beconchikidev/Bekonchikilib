@@ -1,5 +1,5 @@
 --[[
-Часть 1: окно, вкладки, секции, Button/Toggle/Slider
+Часть 1: окно, вкладки, секции, Button/Toggle/Slider + заставка при загрузке
 ]]
 local Library = {}
 Library.__index = Library
@@ -9,6 +9,33 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
+-- ===== Централизованная заставка =====
+do
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "BekonchikiLoading"
+    gui.ResetOnSpawn = false
+    gui.Parent = CoreGui
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0,400,0,100)
+    frame.Position = UDim2.new(0.5,-200,0.5,-50)
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.AnchorPoint = Vector2.new(0.5,0.5)
+
+    local image = Instance.new("ImageLabel", frame)
+    image.Size = UDim2.new(1,0,1,0)
+    image.BackgroundTransparency = 1
+    image.Image = "rbxassetid://81525974663680"
+    image.ScaleType = Enum.ScaleType.Fit
+    image.AnchorPoint = Vector2.new(0.5,0.5)
+    image.Position = UDim2.new(0.5,0,0.5,0)
+
+    task.delay(2, function()
+        gui:Destroy()
+    end)
+end
+
+-- ===== Создание окна =====
 function Library:CreateWindow(title)
     local gui = Instance.new("ScreenGui")
     gui.Name = title:gsub("%s","").."GUI"
@@ -157,6 +184,7 @@ function Library:CreateTab(name)
     self.Tabs[#self.Tabs+1] = tab
     return tab
 end
+
 
 -- Часть 2: Dropdown, TextBox, Notifications, Tween-анимации
 -- вставляем сюда код из второй части, который мы делали ранее
