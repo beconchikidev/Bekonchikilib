@@ -1,46 +1,59 @@
 --[[
-Часть 1: окно, вкладки, секции, Button/Toggle/Slider + заставка при загрузке
+Bekonchiki UI Library
+Первая часть: Заставка + Окно + Вкладки + Секции + Элементы
+Автор: beconchikitim
 ]]
+
 local Library = {}
 Library.__index = Library
+
+-- Сервисы
+local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
 
--- ===== Централизованная заставка =====
-do
+-- =========================
+-- 1. Заставка
+-- =========================
+local function ShowLoadingScreen(assetId, duration)
     local gui = Instance.new("ScreenGui")
     gui.Name = "BekonchikiLoading"
     gui.ResetOnSpawn = false
     gui.Parent = CoreGui
 
-    local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0,400,0,100)
-    frame.Position = UDim2.new(0.5,-200,0.5,-50)
-    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-    frame.AnchorPoint = Vector2.new(0.5,0.5)
+    local bg = Instance.new("Frame", gui)
+    bg.Size = UDim2.new(1,0,1,0)
+    bg.Position = UDim2.new(0,0,0,0)
+    bg.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    bg.BackgroundTransparency = 0.5
 
-    local image = Instance.new("ImageLabel", frame)
-    image.Size = UDim2.new(1,0,1,0)
-    image.BackgroundTransparency = 1
-    image.Image = "rbxassetid://81525974663680"
-    image.ScaleType = Enum.ScaleType.Fit
-    image.AnchorPoint = Vector2.new(0.5,0.5)
+    local image = Instance.new("ImageLabel", gui)
+    image.Size = UDim2.new(0,400,0,100)
     image.Position = UDim2.new(0.5,0,0.5,0)
+    image.AnchorPoint = Vector2.new(0.5,0.5)
+    image.BackgroundTransparency = 1
+    image.Image = "rbxassetid://"..assetId
+    image.ScaleType = Enum.ScaleType.Fit
 
-    task.delay(2, function()
+    task.delay(duration, function()
         gui:Destroy()
     end)
 end
 
--- ===== Создание окна =====
+-- Показываем заставку на 2 секунды
+ShowLoadingScreen("81525974663680", 2)
+
+-- =========================
+-- 2. Создание окна
+-- =========================
 function Library:CreateWindow(title)
     local gui = Instance.new("ScreenGui")
     gui.Name = title:gsub("%s","").."GUI"
     gui.ResetOnSpawn = false
     gui.Parent = CoreGui
+
     local main = Instance.new("Frame", gui)
     main.Size = UDim2.new(0, 350, 0, 500)
     main.Position = UDim2.new(0.3,0,0.2,0)
@@ -48,6 +61,9 @@ function Library:CreateWindow(title)
     main.Active = true
     main.Draggable = true
     main.Name = "MainWindow"
+    main.Visible = false -- скроем пока идёт заставка
+
+    -- Заголовок
     local titleBar = Instance.new("TextLabel", main)
     titleBar.Size = UDim2.new(1,0,0,40)
     titleBar.BackgroundColor3 = Color3.fromRGB(20,20,20)
@@ -56,34 +72,56 @@ function Library:CreateWindow(title)
     titleBar.Font = Enum.Font.GothamBold
     titleBar.TextSize = 18
     titleBar.TextXAlignment = Enum.TextXAlignment.Left
-    titleBar.Padding = UDim.new(0,10)
+    titleBar.Position = UDim2.new(0,10,0,0)
+
+    -- Контейнер вкладок
     local tabContainer = Instance.new("Frame", main)
-    tabContainer.Size = UDim2.new(1,0,1, -40)
+    tabContainer.Size = UDim2.new(1,0,1,-40)
     tabContainer.Position = UDim2.new(0,0,0,40)
     tabContainer.BackgroundTransparency = 1
+
     local tabs = {}
-    local window = setmetatable({Gui=gui,Main=main,TitleBar=titleBar,TabContainer=tabContainer,Tabs=tabs},Library)
+    local window = setmetatable({
+        Gui = gui,
+        Main = main,
+        TitleBar = titleBar,
+        TabContainer = tabContainer,
+        Tabs = tabs
+    }, Library)
+
+    -- Показываем окно после заставки
+    task.delay(2, function()
+        main.Visible = true
+    end)
+
     return window
 end
 
+-- =========================
+-- 3. Вкладки и секции
+-- =========================
 function Library:CreateTab(name)
     local tabFrame = Instance.new("Frame", self.TabContainer)
     tabFrame.Size = UDim2.new(1,0,1,0)
     tabFrame.BackgroundTransparency = 1
     tabFrame.Visible = false
+
     local sectionList = Instance.new("UIListLayout", tabFrame)
     sectionList.SortOrder = Enum.SortOrder.LayoutOrder
     sectionList.Padding = UDim.new(0,10)
-    local tab = {Frame=tabFrame,Sections={}}
+
+    local tab = {Frame=tabFrame, Sections={}}
     function tab:AddSection(sectionName)
         local sectionFrame = Instance.new("Frame", tabFrame)
-        sectionFrame.Size = UDim2.new(1, -20, 0, 150)
+        sectionFrame.Size = UDim2.new(1,-20,0,150)
         sectionFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
         sectionFrame.LayoutOrder = #tab.Sections + 1
         sectionFrame.Name = sectionName
+
         local uiList = Instance.new("UIListLayout", sectionFrame)
         uiList.SortOrder = Enum.SortOrder.LayoutOrder
         uiList.Padding = UDim.new(0,5)
+
         local sectionLabel = Instance.new("TextLabel", sectionFrame)
         sectionLabel.Size = UDim2.new(1,0,0,25)
         sectionLabel.BackgroundTransparency = 1
@@ -92,29 +130,34 @@ function Library:CreateTab(name)
         sectionLabel.Font = Enum.Font.GothamBold
         sectionLabel.TextSize = 16
         sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
-        sectionLabel.LayoutOrder = 0
         sectionLabel.Position = UDim2.new(0,10,0,0)
+        sectionLabel.LayoutOrder = 0
+
         local section = {Frame = sectionFrame}
 
-        function section:CreateButton(text,callback)
+        -- ===== Элементы =====
+        function section:CreateButton(text, callback)
             local btn = Instance.new("TextButton", sectionFrame)
             btn.Size = UDim2.new(1,-20,0,35)
+            btn.Position = UDim2.new(0,10,0,0)
             btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
             btn.TextColor3 = Color3.fromRGB(255,255,255)
             btn.Text = text
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 16
             btn.LayoutOrder = #sectionFrame:GetChildren()
-            btn.Position = UDim2.new(0,10,0,0)
-            btn.MouseButton1Click:Connect(function() if callback then callback() end end)
+            btn.MouseButton1Click:Connect(function()
+                if callback then callback() end
+            end)
         end
 
-        function section:CreateToggle(text,default,callback)
+        function section:CreateToggle(text, default, callback)
             local toggleFrame = Instance.new("Frame", sectionFrame)
             toggleFrame.Size = UDim2.new(1,-20,0,35)
+            toggleFrame.Position = UDim2.new(0,10,0,0)
             toggleFrame.BackgroundColor3 = Color3.fromRGB(45,45,45)
             toggleFrame.LayoutOrder = #sectionFrame:GetChildren()
-            toggleFrame.Position = UDim2.new(0,10,0,0)
+
             local label = Instance.new("TextLabel", toggleFrame)
             label.Size = UDim2.new(0.7,0,1,0)
             label.BackgroundTransparency = 1
@@ -123,11 +166,13 @@ function Library:CreateTab(name)
             label.Font = Enum.Font.Gotham
             label.TextSize = 16
             label.TextXAlignment = Enum.TextXAlignment.Left
+
             local button = Instance.new("TextButton", toggleFrame)
             button.Size = UDim2.new(0.25,0,0.8,0)
             button.Position = UDim2.new(0.7,0,0.1,0)
             button.BackgroundColor3 = default and Color3.fromRGB(0,170,255) or Color3.fromRGB(70,70,70)
             button.Text = ""
+
             button.MouseButton1Click:Connect(function()
                 default = not default
                 button.BackgroundColor3 = default and Color3.fromRGB(0,170,255) or Color3.fromRGB(70,70,70)
@@ -135,12 +180,13 @@ function Library:CreateTab(name)
             end)
         end
 
-        function section:CreateSlider(text,min,max,default,callback)
+        function section:CreateSlider(text, min, max, default, callback)
             local sliderFrame = Instance.new("Frame", sectionFrame)
             sliderFrame.Size = UDim2.new(1,-20,0,35)
+            sliderFrame.Position = UDim2.new(0,10,0,0)
             sliderFrame.BackgroundColor3 = Color3.fromRGB(45,45,45)
             sliderFrame.LayoutOrder = #sectionFrame:GetChildren()
-            sliderFrame.Position = UDim2.new(0,10,0,0)
+
             local label = Instance.new("TextLabel", sliderFrame)
             label.Size = UDim2.new(0.5,0,1,0)
             label.BackgroundTransparency = 1
@@ -149,23 +195,26 @@ function Library:CreateTab(name)
             label.Font = Enum.Font.Gotham
             label.TextSize = 16
             label.TextXAlignment = Enum.TextXAlignment.Left
+
             local bar = Instance.new("Frame", sliderFrame)
             bar.Size = UDim2.new(0.45,0,0.3,0)
             bar.Position = UDim2.new(0.5,0,0.35,0)
             bar.BackgroundColor3 = Color3.fromRGB(70,70,70)
+
             local handle = Instance.new("Frame", bar)
             handle.Size = UDim2.new((default-min)/(max-min),1,1,0)
             handle.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
             handle.InputBegan:Connect(function(input)
                 if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
                     local conn
-                    conn=UserInputService.InputChanged:Connect(function(i)
+                    conn = UserInputService.InputChanged:Connect(function(i)
                         if i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch then
-                            local pos=i.Position.X-bar.AbsolutePosition.X
-                            local frac=math.clamp(pos/bar.AbsoluteSize.X,0,1)
-                            handle.Size=UDim2.new(frac,0,1,0)
-                            local value=min+frac*(max-min)
-                            label.Text=text.." "..math.floor(value)
+                            local pos = i.Position.X - bar.AbsolutePosition.X
+                            local frac = math.clamp(pos / bar.AbsoluteSize.X,0,1)
+                            handle.Size = UDim2.new(frac,0,1,0)
+                            local value = min + frac * (max-min)
+                            label.Text = text.." "..math.floor(value)
                             if callback then callback(value) end
                         end
                     end)
@@ -178,12 +227,17 @@ function Library:CreateTab(name)
             end)
         end
 
+        -- Добавляем секцию в вкладку
         tab.Sections[#tab.Sections+1] = section
         return section
     end
+
+    -- Добавляем вкладку в окно
     self.Tabs[#self.Tabs+1] = tab
     return tab
 end
+
+return Library
 
 
 -- Часть 2: Dropdown, TextBox, Notifications, Tween-анимации
